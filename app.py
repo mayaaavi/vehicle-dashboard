@@ -11,7 +11,7 @@ def home():
         "speed": random.randint(20,120),
         "battery": random.randint(40,100),
         "temperature": random.randint(30,80),
-        "ota_version":"v1.0.1",
+        "ota_version":"v1.0.2",
         "status":"Connected"
     }
 
