@@ -13,13 +13,13 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
 <<<<<<< HEAD
 <<<<<<< HEAD
-  tag: "98fded2"
+  tag: "27d3faf"
 =======
-  tag: "98fded2"
+  tag: "27d3faf"
 >>>>>>> tag value changed in helm
 
 =======
-  tag: "68d9e1e"
+  tag: "27d3faf"
 >>>>>>> Enable ingress for vehicle dashboard edited
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
