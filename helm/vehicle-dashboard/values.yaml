@@ -11,16 +11,9 @@ image:
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-<<<<<<< HEAD
-<<<<<<< HEAD
-  tag: "27d3faf"
-=======
-  tag: "27d3faf"
->>>>>>> tag value changed in helm
 
-=======
-  tag: "27d3faf"
->>>>>>> Enable ingress for vehicle dashboard edited
+  tag: "68d9e1e"
+
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 # This is to override the chart name.
