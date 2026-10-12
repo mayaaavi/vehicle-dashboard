@@ -59,6 +59,15 @@ pipeline {
             }
         }
 
+        stage('Approval') {
+            steps {
+                input(
+                    message: "Deploy image ${IMAGE_NAME}:${IMAGE_TAG}?",
+                    ok: "Approve Deployment"
+                )
+            }
+        }
+
         stage('Update Helm Image Tag') {
             steps {
                 sh '''
@@ -66,7 +75,8 @@ pipeline {
                     helm/vehicle-dashboard/values.yaml
 
                     echo "Updated Helm image:"
-                    grep -A3 "^image:" helm/vehicle-dashboard/values.yaml
+                    grep -A3 "^image:" \
+                    helm/vehicle-dashboard/values.yaml
                 '''
             }
         }
