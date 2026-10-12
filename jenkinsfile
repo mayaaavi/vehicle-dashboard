@@ -66,3 +66,36 @@ pipeline {
         }
     }
 }
+stage('Update Helm Image Tag') {
+    steps {
+        sh '''
+            sed -i "s/tag: .*/tag: \\"${IMAGE_TAG}\\"/" \
+            helm/vehicle-dashboard/values.yaml
+
+            echo "Updated Helm values:"
+            grep -A3 "^image:" helm/vehicle-dashboard/values.yaml
+        '''
+    }
+}
+
+stage('Commit Helm Update') {
+    steps {
+        withCredentials([
+            gitUsernamePassword(
+                credentialsId: 'ghcr-credentials',
+                gitToolName: 'Default'
+            )
+        ]) {
+            sh '''
+                git config user.name "jenkins"
+                git config user.email "jenkins@localhost"
+
+                git add helm/vehicle-dashboard/values.yaml
+
+                git commit -m "Update image tag to ${IMAGE_TAG}"
+
+                git push origin HEAD:main
+            '''
+        }
+    }
+}
