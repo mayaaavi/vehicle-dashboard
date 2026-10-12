@@ -7,12 +7,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Setup') {
             steps {
                 sh '''
@@ -64,38 +58,56 @@ pipeline {
                 }
             }
         }
+
+        stage('Update Helm Image Tag') {
+            steps {
+                sh '''
+                    sed -i "s/tag: .*/tag: \\"${IMAGE_TAG}\\"/" \
+                    helm/vehicle-dashboard/values.yaml
+
+                    echo "Updated Helm image:"
+                    grep -A3 "^image:" helm/vehicle-dashboard/values.yaml
+                '''
+            }
+        }
+
+        stage('Commit Helm Update') {
+            steps {
+                withCredentials([
+                    gitUsernamePassword(
+                        credentialsId: 'ghcr-credentials',
+                        gitToolName: 'Default'
+                    )
+                ]) {
+                    sh '''
+                        git config user.name "jenkins"
+                        git config user.email "jenkins@localhost"
+
+                        git add helm/vehicle-dashboard/values.yaml
+
+                        if git diff --cached --quiet; then
+                            echo "Helm image tag is already current. Nothing to commit."
+                        else
+                            git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
+                            git push origin HEAD:main
+                        fi
+                    '''
+                }
+            }
+        }
     }
-}
-stage('Update Helm Image Tag') {
-    steps {
-        sh '''
-            sed -i "s/tag: .*/tag: \\"${IMAGE_TAG}\\"/" \
-            helm/vehicle-dashboard/values.yaml
 
-            echo "Updated Helm values:"
-            grep -A3 "^image:" helm/vehicle-dashboard/values.yaml
-        '''
-    }
-}
+    post {
+        success {
+            echo "Pipeline completed successfully. Image: ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
 
-stage('Commit Helm Update') {
-    steps {
-        withCredentials([
-            gitUsernamePassword(
-                credentialsId: 'ghcr-credentials',
-                gitToolName: 'Default'
-            )
-        ]) {
-            sh '''
-                git config user.name "jenkins"
-                git config user.email "jenkins@localhost"
+        failure {
+            echo "Pipeline failed. Check the failed stage above."
+        }
 
-                git add helm/vehicle-dashboard/values.yaml
-
-                git commit -m "Update image tag to ${IMAGE_TAG}"
-
-                git push origin HEAD:main
-            '''
+        always {
+            sh 'docker logout ghcr.io || true'
         }
     }
 }
