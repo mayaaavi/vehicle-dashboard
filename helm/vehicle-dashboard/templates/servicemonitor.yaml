@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vehicle-dashboard
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: vehicle-dashboard
+      app.kubernetes.io/name: vehicle-dashboard
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
