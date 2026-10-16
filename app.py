@@ -1,10 +1,22 @@
 from flask import Flask, jsonify
 from prometheus_client import Counter, Gauge, Histogram, make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+import logging
 import random
 import time
 
+
 app = Flask(__name__)
+
+
+# Configure application logging.
+# These logs are printed to container stdout.
+# Grafana Alloy can collect them and send them to Loki.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s level=%(levelname)s message=%(message)s"
+)
+
 
 # Total number of requests
 REQUEST_COUNT = Counter(
@@ -13,12 +25,14 @@ REQUEST_COUNT = Counter(
     ["endpoint"]
 )
 
+
 # Request processing duration
 REQUEST_DURATION = Histogram(
     "vehicle_dashboard_request_duration_seconds",
     "Time taken to process Vehicle Dashboard requests",
     ["endpoint"]
 )
+
 
 # Current vehicle metrics
 VEHICLE_SPEED = Gauge(
@@ -27,17 +41,20 @@ VEHICLE_SPEED = Gauge(
     ["vehicle_id"]
 )
 
+
 VEHICLE_BATTERY = Gauge(
     "vehicle_battery_percent",
     "Current vehicle battery percentage",
     ["vehicle_id"]
 )
 
+
 VEHICLE_TEMPERATURE = Gauge(
     "vehicle_temperature_celsius",
     "Current vehicle temperature",
     ["vehicle_id"]
 )
+
 
 VEHICLE_HEALTH = Gauge(
     "vehicle_health_status",
@@ -49,6 +66,10 @@ VEHICLE_HEALTH = Gauge(
 @app.route("/")
 def home():
     REQUEST_COUNT.labels(endpoint="/").inc()
+
+    app.logger.info(
+        "Vehicle Dashboard home endpoint accessed"
+    )
 
     return jsonify({
         "message": "Vehicle Dashboard is running"
@@ -64,25 +85,80 @@ def get_vehicle_data():
     battery = random.randint(20, 100)
     temperature = random.randint(25, 90)
 
-    if battery < 30 or temperature > 80:
+    # Check vehicle health and generate useful logs.
+    if battery < 30:
         status = "Warning"
         health_value = 0
+
+        app.logger.error(
+            "Low battery detected: "
+            "vehicle_id=%s battery=%s",
+            vehicle_id,
+            battery
+        )
+
+    elif temperature > 80:
+        status = "Warning"
+        health_value = 0
+
+        app.logger.error(
+            "High temperature detected: "
+            "vehicle_id=%s temperature=%s",
+            vehicle_id,
+            temperature
+        )
+
     else:
         status = "Healthy"
         health_value = 1
 
-    # Update Prometheus metrics
-    REQUEST_COUNT.labels(endpoint="/api/vehicle").inc()
-    VEHICLE_SPEED.labels(vehicle_id=vehicle_id).set(speed)
-    VEHICLE_BATTERY.labels(vehicle_id=vehicle_id).set(battery)
-    VEHICLE_TEMPERATURE.labels(vehicle_id=vehicle_id).set(temperature)
-    VEHICLE_HEALTH.labels(vehicle_id=vehicle_id).set(health_value)
+        app.logger.info(
+            "Vehicle is healthy: "
+            "vehicle_id=%s speed=%s "
+            "battery=%s temperature=%s",
+            vehicle_id,
+            speed,
+            battery,
+            temperature
+        )
 
+    # Update Prometheus metrics.
+    REQUEST_COUNT.labels(
+        endpoint="/api/vehicle"
+    ).inc()
+
+    VEHICLE_SPEED.labels(
+        vehicle_id=vehicle_id
+    ).set(speed)
+
+    VEHICLE_BATTERY.labels(
+        vehicle_id=vehicle_id
+    ).set(battery)
+
+    VEHICLE_TEMPERATURE.labels(
+        vehicle_id=vehicle_id
+    ).set(temperature)
+
+    VEHICLE_HEALTH.labels(
+        vehicle_id=vehicle_id
+    ).set(health_value)
+
+    # Calculate and record request duration.
     duration = time.time() - start_time
 
     REQUEST_DURATION.labels(
         endpoint="/api/vehicle"
     ).observe(duration)
+
+    app.logger.info(
+        "Request completed: "
+        "endpoint=/api/vehicle "
+        "vehicle_id=%s status=%s "
+        "duration_seconds=%.4f",
+        vehicle_id,
+        status,
+        duration
+    )
 
     return jsonify({
         "vehicle_id": vehicle_id,
@@ -94,7 +170,7 @@ def get_vehicle_data():
     })
 
 
-# Expose Prometheus metrics at /metrics
+# Expose Prometheus metrics at /metrics.
 app.wsgi_app = DispatcherMiddleware(
     app.wsgi_app,
     {
