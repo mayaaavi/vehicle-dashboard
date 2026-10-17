@@ -1,4 +1,10 @@
 alloy:
+  extraPorts:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+
   configMap:
     content: |-
       discovery.kubernetes "pods" {
@@ -32,5 +38,21 @@ alloy:
       loki.write "loki" {
         endpoint {
           url = "http://10.104.59.24/loki/api/v1/push"
+        }
+      }
+
+      otelcol.receiver.otlp "vehicle_traces" {
+        http {
+          endpoint = "0.0.0.0:4318"
+        }
+
+        output {
+          traces = [otelcol.exporter.otlphttp.tempo.input]
+        }
+      }
+
+      otelcol.exporter.otlphttp "tempo" {
+        client {
+          endpoint = "http://tempo.monitoring.svc.cluster.local:4318"
         }
       }

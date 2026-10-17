@@ -61,7 +61,7 @@ trace.set_tracer_provider(
 otlp_exporter = OTLPSpanExporter(
     endpoint=os.getenv(
         "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-        "http://alloy.monitoring.svc.cluster.local:4318/v1/traces"
+        "http://alloy.monitoring.svc.cluster.local.:4318/v1/traces"
     )
 )
 
