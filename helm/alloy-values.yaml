@@ -53,6 +53,6 @@ alloy:
 
       otelcol.exporter.otlphttp "tempo" {
         client {
-          endpoint = "http://tempo.monitoring.svc.cluster.local:4318"
+          endpoint = "http://10.102.74.146:4318"
         }
       }

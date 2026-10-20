@@ -16,6 +16,15 @@ pipeline {
             }
         }
 
+        stage('Integration Tests') {
+            steps {
+                sh '''
+                    echo "Running Vehicle Dashboard integration tests..."
+                    python3 -m pytest tests/integration/ -v
+                '''
+            }
+        }
+
         stage('Generate Image Tag') {
             steps {
                 script {
