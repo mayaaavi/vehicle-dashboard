@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'ghcr.io/mayaaavi/vehicle-dashboard'
+        IMAGE_NAME = 'yousafpythonacr.azurecr.io/vehicle-dashboard'
     }
 
     stages {
@@ -37,7 +37,7 @@ pipeline {
                 echo "Image tag: ${IMAGE_TAG}"
             }
         }
-
+//Environment variable means Jenkins keeps a value in memory for the current pipeline/build so other stages can reuse it.
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -51,15 +51,15 @@ pipeline {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'ghcr-credentials',
-                        usernameVariable: 'GHCR_USER',
-                        passwordVariable: 'GHCR_TOKEN'
+                        credentialsId: 'acr-credentials',
+                        usernameVariable: 'ACR_CLIENT_ID',
+                        passwordVariable: 'ACR_CLIENT_SECRET'
                     )
                 ]) {
                     sh '''
-                        echo "$GHCR_TOKEN" | \
-                        docker login ghcr.io \
-                        -u "$GHCR_USER" \
+                        echo "$ACR_CLIENT_SECRET" | \
+                        docker login yousafpythonacr.azurecr.io \
+                        -u "$ACR_CLIENT_ID" \
                         --password-stdin
 
                         docker push ${IMAGE_NAME}:${IMAGE_TAG}
@@ -138,7 +138,7 @@ pipeline {
         }
 
         always {
-            sh 'docker logout ghcr.io || true'
+            sh 'docker logout yousafpythonacr.azurecr.io || true'
         }
     }
 }
