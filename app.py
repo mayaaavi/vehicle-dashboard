@@ -142,7 +142,7 @@ def home():
     )
 
     return jsonify({
-        "message": "Vehicle Dashboard is running"
+        "message": "Vehicle Dashboard is running its coming from jenkins, part of jenkins argo with AKS integration"
     })
 
 
